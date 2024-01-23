@@ -4,14 +4,15 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Simulation.BatterySimulator;
 import frc.robot.Subsystems.Drivetrain;
+import frc.robot.Util.SwerveModule;
 import frc.robot.Util.SwerveModuleStateU;
 import frc.robot.Util.Vec2d;
 import frc.robot.Util.Vec3d;
@@ -28,14 +29,21 @@ public class Robot extends TimedRobot {
    * initialization code.
    */
 
-
-    Drivetrain drivetrain = new Drivetrain( Drivetrain.OperatingMode.SIM ); //Instantiate the DriveTrain in sim mode
+    //Change SIM to DRIVE
+    //Also for whatever reason gyro.calibrarte() isnt a thing anymore but its fine for now (hopefully)
+    //and the gyro auto-calibrates at the start anyways (source: an insane amount of copium)
+    //also worst case scenario just make it move by directly setting the motors in autonomous periodic
+    Drivetrain drivetrain = new Drivetrain( Drivetrain.OperatingMode.DRIVE ); //Instantiate the DriveTrain in sim mode
     private Field2d m_field = new Field2d(); //WPI Lib class that handles and manages the simulated field
+
+    XboxController cont = new XboxController(0);
 
     @Override
     public void robotInit() {
+      
       SmartDashboard.putData("Field", m_field); //Upload field to SmartDashboard
-      drivetrain.resetOdometry( new Vec3d(3.0, 3.0, -90) ); //Resets the Robot's position.
+      drivetrain.resetHeading();
+      drivetrain.resetOdometry( new Vec3d(3.0, 3.0, 0) ); //Resets the Robot's position.
                                                             //Odometry (X,Y) = (0,0) is the bottom left corner of the field
                                                             //Rotations are Counter-Clockwise Positive
                                                             //This initial position describes a robot 3 meters from the bottom edge,
@@ -47,6 +55,25 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
       drivetrain.updateOdometry();
       m_field.setRobotPose(drivetrain.getRobotPosition().asPose2d());
+
+      SwerveModuleStateU[] states = drivetrain.getSwerveModuleStates();
+
+      for(int i = 0; i < 4; i++)
+      {
+        SmartDashboard.putNumber("angle " + (i + 1), states[i].angle.getDegrees());
+      }
+
+      SwerveModule[] mods = drivetrain.getModules();
+
+      for(int i = 0; i < 4; i++)
+      {
+        SmartDashboard.putNumber("desired " + (i + 1), mods[i].desired);
+      }
+
+      for(int i = 0; i < 4; i++)
+      {
+        SmartDashboard.putNumber("speed " + (i + 1), mods[i].turnSpeed);
+      }
     }
 
     @Override
@@ -55,13 +82,22 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void autonomousPeriodic() {}
+    public void autonomousPeriodic()
+    {
+      drivetrain.set(new ChassisSpeeds(0.1, 0, 0), false);
+    }
 
     @Override
     public void teleopInit() {}
 
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic()
+    {
+      drivetrain.set(new ChassisSpeeds(-cont.getRawAxis(1), -cont.getRawAxis(0), cont.getRawAxis(2)), false);
+      //drivetrain.set(new ChassisSpeeds(0, 0, 0.3), false);
+      //SmartDashboard.putNumber("Heading", drivetrain.getHeading().getDegrees());
+      //SmartDashboard
+    }
 
     @Override
     public void disabledInit() {
@@ -70,7 +106,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void disabledPeriodic() {
-      drivetrain.set( new ChassisSpeeds(0.0, 0.0, 0.0) , true);
+      drivetrain.set( new ChassisSpeeds(0.0, 0.0, 0.0) , false);
     }
 
     double testStartTime = 0;
@@ -82,7 +118,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void testPeriodic() {
-      drivetrain.set( new ChassisSpeeds(1, 0.0, 0.0) , true);
+      drivetrain.set( new ChassisSpeeds(0, 0.0, 0.0) , false);
     }
 
     @Override
@@ -102,6 +138,5 @@ public class Robot extends TimedRobot {
 
       SmartDashboard.putNumber("speed", xy_velocity.len());
       SmartDashboard.putNumber("turn speed", speed.omegaRadiansPerSecond);
-      
     }
 }

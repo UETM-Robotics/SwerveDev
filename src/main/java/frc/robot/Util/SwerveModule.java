@@ -1,7 +1,10 @@
 package frc.robot.Util;
 
+import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -14,7 +17,7 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants.RobotConstants;
+import frc.robot.ConstantsF.RobotConstants;
 import frc.robot.Hardware.SparkMaxU;
 
 /**
@@ -44,20 +47,26 @@ public class SwerveModule {
 
     private final LinearSystemLoop<N1, N1, N1> m_loop;
 
+    public double desired;
+    public double turnSpeed;
+
     /**
      * Creates a Swerve Module Object
      * @param ThrottleMotor SparkMaxU Throttle Motor
      * @param AngleMotor SparkMaxU Angle Motor
      */
     public SwerveModule(int ThrottleMotorPort, int AngleMotorPort, int angleEncoderPort, double angleOffset) {
-
+        
         this.ThrottleMotor = new SparkMaxU(ThrottleMotorPort, MotorType.kBrushless);
         this.AngleMotor = new SparkMaxU(AngleMotorPort, MotorType.kBrushless);
-        this.angleEncoder = new CANcoder(angleEncoderPort);
+        this.angleEncoder = new CANcoder(angleEncoderPort);        
 
         this.angleController = new PIDController(RobotConstants.swerveAnglePID.P(),
                                                 RobotConstants.swerveAnglePID.I(),
                                                 RobotConstants.swerveAnglePID.D());
+
+        angleController.enableContinuousInput(-180, 180);
+        //angleController.setTolerance(0.5);
 
         this.angleOffset = angleOffset;
 
@@ -101,7 +110,7 @@ public class SwerveModule {
                                                 RobotConstants.swerveAnglePID.D());
 
         this.angleOffset = 0;
-
+        //angleController.enableContinuousInput(-180, 180);
         m_DrivePlant = LinearSystemId.identifyVelocitySystem(kDriveKv, kDriveKa);
 
         m_observer = new KalmanFilter<>(
@@ -135,10 +144,19 @@ public class SwerveModule {
     */
     public void setState(SwerveModuleStateU state, boolean velocityControl) {
 
-        double currentAngle = this.angleEncoder.getAbsolutePosition().getValueAsDouble();
+        double currentAngle = this.angleEncoder.getAbsolutePosition().getValueAsDouble() * 360 - angleOffset;
 
-        SwerveModuleStateU correctedState = SwerveModuleStateU.optimize(state, 
-                                                            Rotation2d.fromDegrees(currentAngle));
+        if(currentAngle > 180)
+        {
+            currentAngle -= 360;
+        }
+
+        if(currentAngle < -180)
+        {
+            currentAngle += 360;
+        }
+
+        SwerveModuleStateU correctedState = SwerveModuleStateU.optimize(state, Rotation2d.fromDegrees(currentAngle));
 
         if (velocityControl)
         {
@@ -150,7 +168,10 @@ public class SwerveModule {
         }
 
         this.angleController.setSetpoint(correctedState.angle.getDegrees());
-        this.AngleMotor.set(this.angleController.calculate(currentAngle));
+        double temp = this.angleController.calculate(currentAngle);
+        this.AngleMotor.set(temp);
+        desired = angleController.getSetpoint();
+        turnSpeed = AngleMotor.get();
     }
 
     public double calculateVelocityControlVoltage(double setpoint, double velocity) {
@@ -166,8 +187,20 @@ public class SwerveModule {
     * @return The Module's current state according to sensor readings
     */
     public SwerveModuleStateU getState() {
+        double currentAngle = this.angleEncoder.getAbsolutePosition().getValueAsDouble() * 360 - angleOffset;
+
+        if(currentAngle > 180)
+        {
+            currentAngle -= 360;
+        }
+
+        if(currentAngle < -180)
+        {
+            currentAngle += 360;
+        }
+
         return new SwerveModuleStateU(this.ThrottleMotor.getEncoder().getVelocity() * RobotConstants.moduleRPM_to_MetersPerSecond,
-                                    Rotation2d.fromDegrees(this.angleEncoder.getAbsolutePosition().getValueAsDouble()),
+                                    Rotation2d.fromDegrees(currentAngle),
                                     this.ThrottleMotor.getPosition() * 2 * Math.PI );
     }
 
@@ -230,4 +263,9 @@ public class SwerveModule {
 
     }
     
+
+    public SparkMaxU getThrottle()
+    {
+        return ThrottleMotor;
+    }
 }

@@ -10,7 +10,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants.RobotConstants;
+import frc.robot.ConstantsF.RobotConstants;
 import frc.robot.Util.SwerveModule;
 import frc.robot.Util.SwerveModuleStateU;
 import edu.wpi.first.math.MathUtil;
@@ -41,7 +41,7 @@ public class SimSwerveModule extends SwerveModule{
 
         angleController = new PIDController(3.0, 0.0, 0.0);
 
-        angleController.enableContinuousInput(0, 2 * Math.PI);
+        angleController.enableContinuousInput(-Math.PI, Math.PI);
 
         BatterySimulator.getInstance().addCurrentDrawSource( () -> this.driveSim.getCurrentDrawAmps() );
         BatterySimulator.getInstance().addCurrentDrawSource( () -> this.turnSim.getCurrentDrawAmps() );
@@ -57,10 +57,10 @@ public class SimSwerveModule extends SwerveModule{
         this.turnRelativePositionRad += angleDiffRad;
         this.turnAbsolutePositionRad += angleDiffRad;
 
-        while (this.turnAbsolutePositionRad < 0) {
+        while (this.turnAbsolutePositionRad < -Math.PI) {
             this.turnAbsolutePositionRad += 2.0 * Math.PI;
         }
-        while (this.turnAbsolutePositionRad > 2.0 * Math.PI) {
+        while (this.turnAbsolutePositionRad > Math.PI) {
             this.turnAbsolutePositionRad -= 2.0 * Math.PI;
         }
 

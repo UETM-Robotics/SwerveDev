@@ -6,7 +6,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Vision;
-import frc.robot.Constants.RobotConstants;
+import frc.robot.ConstantsF.RobotConstants;
 import frc.robot.Subsystems.Drivetrain.OperatingMode;
 import frc.robot.Util.OdometryU;
 import frc.robot.Util.SwerveModuleStateU;
@@ -40,8 +40,7 @@ public class VSLAM {
         } else {
 
             gyro = new AHRS(SPI.Port.kMXP);
-
-            gyro.calibrate();
+            //gyro.calibrate();
             while(gyro.isCalibrating()) {}
 
             DriverStation.reportError("Gyro Successfully Callibrated", false);

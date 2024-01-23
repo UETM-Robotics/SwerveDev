@@ -13,26 +13,26 @@ public class SwerveModuleStateU extends SwerveModuleState {
 
     public SwerveModuleStateU() { 
         super();
-        utilityController.enableContinuousInput(0, 360);
+        utilityController.enableContinuousInput(-180, 180);
         drivePositionRad = 0;
      }
 
     public SwerveModuleStateU(double speedMetersPerSecond, Rotation2d angle) {
         super(speedMetersPerSecond, angle);
         this.drivePositionRad = 0;
-        utilityController.enableContinuousInput(0, 360);
+        utilityController.enableContinuousInput(-180, 180);
     }
 
     public SwerveModuleStateU(double speedMetersPerSecond, Rotation2d angle, double drivePositionRad) {
         super(speedMetersPerSecond, angle);
         this.drivePositionRad = drivePositionRad;
-        utilityController.enableContinuousInput(0, 360);
+        utilityController.enableContinuousInput(-180, 180);
     }
 
     public SwerveModuleStateU(SwerveModuleState state) {
       super( state.speedMetersPerSecond, state.angle );
       this.drivePositionRad = 0;
-      utilityController.enableContinuousInput(0, 360);
+      utilityController.enableContinuousInput(-180, 180);
     }
 
     public static SwerveModuleStateU optimize(
@@ -41,7 +41,7 @@ public class SwerveModuleStateU extends SwerveModuleState {
         double option1 = desiredState.angle.getDegrees();
         double option2 = desiredState.angle.getDegrees() - 180;
 
-        if(option2 < 0) {
+        if(option2 < -180) {
           option2 += 360;
         }
 
@@ -53,20 +53,10 @@ public class SwerveModuleStateU extends SwerveModuleState {
         utilityController.setSetpoint(option2);
         utilityController.calculate(currentAngle.getDegrees());
 
-        double delta2 = utilityController.getPositionError();        
+        double delta2 = utilityController.getPositionError();
 
         return (Math.abs(delta1) < Math.abs(delta2)) ? new SwerveModuleStateU(desiredState.speedMetersPerSecond, Rotation2d.fromDegrees(option1)) : 
                 new SwerveModuleStateU(-desiredState.speedMetersPerSecond, Rotation2d.fromDegrees(option2));
-        
-
-    // var delta = desiredState.angle.minus(currentAngle);
-    // if (Math.abs(delta.getDegrees()) > 90.0) {
-    //   return new SwerveModuleStateU(
-    //       -desiredState.speedMetersPerSecond,
-    //       desiredState.angle.rotateBy(Rotation2d.fromDegrees(180.0)), desiredState.drivePositionRad);
-    // } else {
-    //   return new SwerveModuleStateU(desiredState.speedMetersPerSecond, desiredState.angle, desiredState.drivePositionRad);
-    // }
   }
     
     public static SwerveModuleStateU[] toModuleStatesU(SwerveModuleState[] swerveModuleStates) {

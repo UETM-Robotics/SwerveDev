@@ -1,9 +1,12 @@
 package frc.robot.Subsystems;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import frc.robot.Constants.PortConstants;
-import frc.robot.Constants.RobotConstants;
+import frc.robot.ConstantsF.PortConstants;
+import frc.robot.ConstantsF.RobotConstants;
 import frc.robot.Simulation.SimSwerveModule;
 import frc.robot.Util.SwerveModule;
 import frc.robot.Util.SwerveModuleStateU;
@@ -78,6 +81,8 @@ public class Drivetrain {
         }
 
         this.vslam = new VSLAM( this.dMode, getSwerveModuleStates() );
+
+        //AutoBuilder.configureHolonomic(null, null, null, null, null, null, null);
     }
 
     /**
@@ -98,6 +103,14 @@ public class Drivetrain {
         
     }
 
+    public void lol(double speed)
+    {
+        swerveModules[0].getThrottle().set(speed);
+        swerveModules[1].getThrottle().set(speed);
+        swerveModules[2].getThrottle().set(speed);
+        swerveModules[3].getThrottle().set(speed);
+    }
+
     /**
      * Call to update the VSLAM odometry reading
      */
@@ -111,13 +124,23 @@ public class Drivetrain {
     public void resetOdometry() {
         resetOdometry(new Vec3d());
     }
-   
+
     /**
      * Resets robot's position on the field to some initial position vector
      * @param initalPositionVector Robot's starting position on the field
      */
     public void resetOdometry(Vec3d initalPositionVector) {
         vslam.resetOdometry(initalPositionVector, vslam.getHeading(), getSwerveModuleStates());
+    }
+
+    public Rotation2d getHeading()
+    {
+        return vslam.getHeading();
+    }
+
+    public void resetHeading()
+    {
+        vslam.resetHeading();
     }
 
     /**
@@ -155,6 +178,11 @@ public class Drivetrain {
         }
     }
 
+    public SwerveModule[] getModules()
+    {
+        return swerveModules;
+    }
+
     public ChassisSpeeds getChassisSpeeds() {
         return kinematics.toChassisSpeeds(getSwerveModuleStates());
     }
@@ -175,5 +203,4 @@ public class Drivetrain {
     public static enum OperatingMode {
         SIM, DRIVE;
     }
-    
 }
